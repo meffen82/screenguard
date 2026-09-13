@@ -685,10 +685,13 @@ impl HeartbeatLoop {
             });
         }
 
-        if hb_users.is_empty() {
-            return Ok(());
-        }
-
+        // Always send the tick, even with zero users: an empty heartbeat is a
+        // no-op on the server (no usage to persist, nothing to enforce), but it
+        // keeps the connection from sitting fully silent and tripping the
+        // server's WS_IDLE_TIMEOUT — which previously forced a reconnect (and,
+        // via the reconnect sequence's unconditional usage-sync resend, a
+        // duplicate accounting of the day's usage) every ~90s whenever no
+        // managed user had an active session (e.g. right after a lockout).
         if online {
             ws_client::send(&self.outbound_tx, MSG_HEARTBEAT, &Heartbeat { users: hb_users })
                 .await?;

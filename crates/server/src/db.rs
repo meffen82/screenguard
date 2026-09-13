@@ -1291,6 +1291,46 @@ pub async fn add_usage_seconds(
     Ok(())
 }
 
+/// Reconciles an agent-reported absolute daily total (as sent by
+/// `MSG_USAGE_SYNC`, e.g. on every reconnect) against what's stored.
+///
+/// Unlike `add_usage_seconds` (for incremental heartbeat deltas), this must
+/// not add: the agent resends its whole locally-accumulated total on every
+/// reconnect, so routing that through the additive path double(/triple/...)
+/// counts it on every reconnect. We only ever raise the stored value, never
+/// lower it, in case an older/stale sync arrives after a newer heartbeat.
+pub async fn reconcile_usage_seconds(
+    pool: &DbPool,
+    agent_user_id: Uuid,
+    date: &str,
+    seconds: i64,
+) -> Result<()> {
+    let current: Option<i64> = sqlx::query_scalar(
+        "SELECT used_seconds FROM daily_usage WHERE agent_user_id=$1 AND date=$2",
+    )
+    .bind(agent_user_id.to_string())
+    .bind(date)
+    .fetch_optional(pool)
+    .await?;
+
+    let reconciled = seconds.max(current.unwrap_or(0));
+
+    sqlx::query(
+        "INSERT INTO daily_usage (agent_user_id, date, used_seconds, reported_at)
+         VALUES ($1,$2,$3,$4)
+         ON CONFLICT(agent_user_id, date)
+         DO UPDATE SET used_seconds=EXCLUDED.used_seconds,
+                       reported_at=EXCLUDED.reported_at",
+    )
+    .bind(agent_user_id.to_string())
+    .bind(date)
+    .bind(reconciled)
+    .bind(Utc::now().timestamp())
+    .execute(pool)
+    .await?;
+    Ok(())
+}
+
 pub async fn get_used_seconds_for_profile_today(
     pool: &DbPool,
     profile_id: Uuid,
