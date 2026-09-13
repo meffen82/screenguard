@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # ── config ────────────────────────────────────────────────────────────────────
-REPO="adambie/screenguard"
+REPO="meffen82/screenguard"
 RELEASES_URL="https://github.com/${REPO}/releases/latest/download"
 INSTALL_DIR="/usr/local/bin"
 CONFIG_DIR="/etc/screenguard"
