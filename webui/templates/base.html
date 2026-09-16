@@ -401,6 +401,17 @@
       setTheme(document.documentElement.getAttribute('data-bs-theme') === 'dark' ? 'light' : 'dark');
     });
   })();
+
+  // Modal content is static markup, just shown/hidden — closing a modal
+  // (Cancel, X, backdrop click, Esc) does not clear whatever was typed into
+  // it, so reopening it later shows the stale value. Reset any form inside
+  // a modal once it has finished closing. Delegated on document since
+  // modals are shown/hidden dynamically, one listener covers all of them
+  // (present now and any added later).
+  document.addEventListener('hidden.bs.modal', function (e) {
+    var form = e.target.querySelector('form');
+    if (form) form.reset();
+  });
 </script>
 {% block scripts %}{% endblock %}
 <script>
