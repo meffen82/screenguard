@@ -683,7 +683,9 @@ def delete_user(user_id):
     if r and r.ok:
         flash(t("flash.user_deleted"), "success")
     elif r and r.status_code == 409:
-        flash(t("flash.last_admin_error"), "danger")
+        code = r.json().get("code") if r else None
+        flash(t("flash.cannot_delete_self") if code == "self_delete" else t("flash.last_admin_error"),
+              "danger")
     else:
         flash(t("flash.settings_error"), "danger")
     return redirect(url_for("manage_users"))

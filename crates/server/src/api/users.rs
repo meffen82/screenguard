@@ -112,7 +112,25 @@ pub async fn delete_user(
     Extension(claims): Extension<Claims>,
     Path(id): Path<Uuid>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, Json<serde_json::Value>)> {
-    require_owner(&state, &claims).await?;
+    let caller = require_owner(&state, &claims).await?;
+
+    // The owner is the only account allowed to delete anything, so "delete my
+    // own account" only ever means the owner deleting themselves. With no
+    // ownership-transfer mechanism in this version, that would silently zero
+    // out every `is_owner=true` row while other accounts remain — locking
+    // user management for good, not just for the deleter. Block it outright
+    // rather than relying on the (separate) last-admin-overall check below,
+    // which wouldn't catch this since other, non-owner accounts can still
+    // exist.
+    if id == caller.id {
+        return Err((
+            StatusCode::CONFLICT,
+            Json(serde_json::json!({
+                "error": "Cannot delete your own account",
+                "code": "self_delete",
+            })),
+        ));
+    }
 
     if db::get_admin_user_by_id(&state.db, id).await.map_err(internal)?.is_none() {
         return Err(not_found());
@@ -121,7 +139,10 @@ pub async fn delete_user(
     if count <= 1 {
         return Err((
             StatusCode::CONFLICT,
-            Json(serde_json::json!({ "error": "Cannot delete the last remaining admin account" })),
+            Json(serde_json::json!({
+                "error": "Cannot delete the last remaining admin account",
+                "code": "last_admin",
+            })),
         ));
     }
 

@@ -55,9 +55,15 @@
                       data-bs-toggle="modal" data-bs-target="#resetModal-{{ u.id }}">
                 {{ t('users.btn_reset_password') }}
               </button>
+              {% set is_self = u.id == me.id %}
+              {% set is_last = users|length <= 1 %}
               <form method="post" action="{{ url_for('delete_user', user_id=u.id) }}"
                     onsubmit="return confirm({{ t('users.confirm_delete', username=u.username) | tojson }})">
-                <button class="btn btn-sm btn-outline-danger" {% if users|length <= 1 %}disabled title="{{ t('users.cannot_delete_last') }}"{% endif %}>
+                <button class="btn btn-sm btn-outline-danger"
+                        {% if is_self or is_last %}
+                          disabled
+                          title="{{ t('users.cannot_delete_self') if is_self else t('users.cannot_delete_last') }}"
+                        {% endif %}>
                   {{ t('users.btn_delete') }}
                 </button>
               </form>

@@ -239,6 +239,7 @@
   "users.btn_delete": "Delete",
   "users.btn_cancel": "Cancel",
   "users.cannot_delete_last": "Cannot delete the last remaining account",
+  "users.cannot_delete_self": "You cannot delete your own account",
   "users.confirm_delete": "Delete the account \"{username}\"?",
   "users.reset_title": "Reset password for {username}",
   "flash.not_permitted": "You don't have permission to manage users.",
@@ -246,5 +247,6 @@
   "flash.username_taken": "That username is already taken.",
   "flash.password_reset": "Password reset.",
   "flash.user_deleted": "Account deleted.",
-  "flash.last_admin_error": "Cannot delete the last remaining account."
+  "flash.last_admin_error": "Cannot delete the last remaining account.",
+  "flash.cannot_delete_self": "You cannot delete your own account."
 }
